@@ -1,20 +1,21 @@
 # JWT Auth Demo
 
-Express REST API thực hành đăng nhập, JWT và middleware xác thực. Dịch vụ dùng dữ liệu người dùng trong bộ nhớ từ `db.js`, nên đây chỉ là ví dụ học tập; thay đổi token và dữ liệu sẽ mất khi khởi động lại.
+An Express REST API exercise demonstrating an Express Router, JWT login, and authentication middleware. User data is an in-memory sample in `db.js`, not a production database.
 
-## Chạy ứng dụng
+## Run locally
 
-1. Sao chép `.env.example` thành `.env` và đặt `JWT_SECRET` thành một chuỗi bí mật ngẫu nhiên.
-2. Chạy `npm start` (hoặc `npm run dev`).
-3. Mặc định dịch vụ chạy tại `http://localhost:3000`.
+1. Copy `.env.example` to `.env` and set a long, random `JWT_SECRET`.
+2. Run `npm install`.
+3. Run `npm start` (or `npm run dev` for automatic restart).
+4. The service listens at `http://localhost:3000` by default.
 
-Tài khoản mẫu: `admin`. Mật khẩu ban đầu là `123456`; gửi mật khẩu ở dạng MD5 (`e10adc3949ba59abbe56e057f20f883e`) hoặc Base64 (`MTIzNDU2`).
+Sample credentials: username `admin`, password `123456`. For the login request, send the password as MD5 (`e10adc3949ba59abbe56e057f20f883e`) or Base64 (`MTIzNDU2`).
 
 ## API
 
-### Đăng nhập và nhận JWT
+### Login and issue a JWT
 
-Gửi `POST /` với JSON:
+Send `POST /` with JSON:
 
 ```json
 {
@@ -23,14 +24,21 @@ Gửi `POST /` với JSON:
 }
 ```
 
-Phản hồi thành công có `token`, `tokenType` (`Bearer`) và thời hạn 3600 giây.
+A successful response contains a three-part JWT in `token`, its type (`Bearer`), and its lifetime (3600 seconds).
 
-### Kiểm tra token
+### Authenticate a JWT
 
-Gọi `GET /auth` với header `Authorization: Bearer <token>`. Token thiếu, không hợp lệ hoặc hết hạn sẽ nhận HTTP 401.
+Send `GET /auth` with the header `Authorization: Bearer <token>`. A valid token returns `authenticated: true`; a missing, invalid, or expired token returns HTTP 401.
 
-### API Hello World có bảo vệ
+### Protected Hello World API
 
-Gọi `GET /hello` với cùng header để nhận thông điệp `Hello World`. Route này gắn middleware xác thực JWT.
+Send `GET /hello` with the same Bearer token. The response includes `Hello World`. This route uses the JWT verification middleware.
 
-> Base64 và MD5 không bảo vệ được mật khẩu trên đường truyền; chỉ dùng để đáp ứng bài thực hành. Dùng HTTPS và lưu mật khẩu bằng thuật toán băm mật khẩu chuyên dụng (như Argon2 hoặc bcrypt) trong ứng dụng thực tế.
+## Postman quick test
+
+1. Create a `POST http://localhost:3000/` request. Select **Body → raw → JSON**, enter the login JSON above, and send it.
+2. Copy the complete value of the response's `token` field.
+3. Create a `GET http://localhost:3000/auth` request. Under **Authorization**, choose **Bearer Token** and paste the token into the Token field.
+4. Repeat with `GET http://localhost:3000/hello`.
+
+> Base64 is encoding, not encryption, and MD5 is not appropriate for protecting passwords in production. This exercise accepts those formats to match the assignment. Real applications should use HTTPS and a password hashing algorithm such as Argon2 or bcrypt, and store user accounts in a database.

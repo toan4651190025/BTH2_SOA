@@ -1,18 +1,21 @@
 {
   "name": "jwt-auth-demo",
   "version": "1.0.0",
-  "description": "",
+  "description": "Express REST API example for JWT login and authentication middleware",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "test": "node --test"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "express",
+    "jwt",
+    "authentication"
+  ],
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "crypto-js": "^4.2.0",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3"

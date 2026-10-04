@@ -6,18 +6,19 @@ const verifyToken = (req, res, next) => {
   const token = match && match[1];
 
   if (!token) {
-    return res.status(401).json({ message: 'Access Denied: Không tìm thấy Bearer token!' });
+    return res.status(401).json({ message: 'Access denied: Bearer token is required.' });
   }
 
-  if (!process.env.JWT_SECRET) {
-    return res.status(500).json({ message: 'JWT_SECRET chưa được cấu hình.' });
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    return res.status(500).json({ message: 'JWT_SECRET is not configured.' });
   }
 
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
+    req.user = jwt.verify(token, secret, { algorithms: ['HS256'] });
     return next();
   } catch (error) {
-    return res.status(401).json({ message: 'Invalid Token: Token không hợp lệ hoặc đã hết hạn!' });
+    return res.status(401).json({ message: 'Invalid or expired token.' });
   }
 };
 

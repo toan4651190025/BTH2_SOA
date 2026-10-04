@@ -4,7 +4,7 @@ const express = require('express');
 const authRoutes = require('./authRoutes');
 
 if (!process.env.JWT_SECRET) {
-  console.error('Thiếu JWT_SECRET. Hãy cấu hình biến môi trường trước khi chạy service.');
+  console.error('JWT_SECRET is not set. Configure it in .env before starting the service.');
   process.exit(1);
 }
 
@@ -17,16 +17,18 @@ app.use('/', authRoutes);
 
 app.use((error, req, res, next) => {
   if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
-    return res.status(400).json({ message: 'JSON không hợp lệ.' });
+    return res.status(400).json({ message: 'Invalid JSON request body.' });
   }
 
   console.error(error);
   const status = Number.isInteger(error.status) && error.status >= 400 && error.status < 500
     ? error.status
     : 500;
-  return res.status(status).json({ message: status === 500 ? 'Lỗi máy chủ.' : error.message });
+  return res.status(status).json({
+    message: status === 500 ? 'Internal server error.' : error.message
+  });
 });
 
 app.listen(port, () => {
-  console.log(`JWT Auth Demo đang chạy tại http://localhost:${port}`);
+  console.log(`JWT Auth Demo is listening at http://localhost:${port}`);
 });

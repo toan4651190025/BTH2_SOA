@@ -6,7 +6,7 @@ const verifyToken = require('./authMiddleware');
 
 const router = express.Router();
 
-function getPasswordHash(password) {
+function passwordToMd5(password) {
   if (typeof password !== 'string' || password.length === 0) {
     return null;
   }
@@ -15,45 +15,53 @@ function getPasswordHash(password) {
     return password.toLowerCase();
   }
 
+  const normalizedBase64 = password.replace(/=+$/, '');
   const decoded = Buffer.from(password, 'base64');
-  const normalizedInput = password.replace(/=+$/, '');
-  if (decoded.length === 0 || decoded.toString('base64').replace(/=+$/, '') !== normalizedInput) {
+  if (
+    decoded.length === 0
+    || decoded.toString('base64').replace(/=+$/, '') !== normalizedBase64
+  ) {
     return null;
   }
 
   return crypto.createHash('md5').update(decoded).digest('hex');
 }
 
-function hashesMatch(candidate, stored) {
-  if (typeof stored !== 'string' || !/^[a-f\d]{32}$/i.test(stored)) {
+function passwordsMatch(candidateHash, storedHash) {
+  if (
+    !candidateHash
+    || typeof storedHash !== 'string'
+    || !/^[a-f\d]{32}$/i.test(storedHash)
+  ) {
     return false;
   }
 
-  const candidateBuffer = Buffer.from(candidate, 'hex');
-  const storedBuffer = Buffer.from(stored, 'hex');
-  return candidateBuffer.length === storedBuffer.length
-    && crypto.timingSafeEqual(candidateBuffer, storedBuffer);
+  const candidate = Buffer.from(candidateHash, 'hex');
+  const stored = Buffer.from(storedHash, 'hex');
+  return candidate.length === stored.length && crypto.timingSafeEqual(candidate, stored);
 }
 
 router.get('/', (req, res) => {
-  res.json({
+  return res.json({
     message: 'JWT Auth Demo',
-    login: 'POST /',
-    authenticate: 'GET /auth',
-    protectedExample: 'GET /hello'
+    endpoints: {
+      login: 'POST /',
+      authenticate: 'GET /auth',
+      protectedHelloWorld: 'GET /hello'
+    }
   });
 });
 
 router.post('/', (req, res) => {
   const { userName, password } = req.body || {};
   if (typeof userName !== 'string' || typeof password !== 'string') {
-    return res.status(400).json({ message: 'Cần gửi userName và password.' });
+    return res.status(400).json({ message: 'userName and password are required.' });
   }
 
   const user = users.find((item) => item.UserName === userName);
-  const passwordHash = getPasswordHash(password);
-  if (!user || !passwordHash || !hashesMatch(passwordHash, user.Password)) {
-    return res.status(401).json({ message: 'Tên đăng nhập hoặc mật khẩu không đúng.' });
+  const candidateHash = passwordToMd5(password);
+  if (!user || !passwordsMatch(candidateHash, user.Password)) {
+    return res.status(401).json({ message: 'Invalid username or password.' });
   }
 
   const token = jwt.sign(
@@ -64,7 +72,7 @@ router.post('/', (req, res) => {
   user.Token = token;
 
   return res.json({
-    message: 'Đăng nhập thành công.',
+    message: 'Login successful.',
     token,
     tokenType: 'Bearer',
     expiresIn: 3600
